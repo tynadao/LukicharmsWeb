@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using LukicharmsWeb.Models;
 
 namespace LukicharmsWeb.Controllers
 {
@@ -22,8 +23,21 @@ namespace LukicharmsWeb.Controllers
 
         public IActionResult Contact()
         {
-            ViewData["Message"] = "Your contact page.";
+            return View();
+        }
 
+        [HttpPost]
+        public IActionResult Contact(ContactModel contact)
+        {
+            var contactInfo = new ContactModel
+            {
+                Name = contact.Name,
+                Email = contact.Email,
+                Company = contact.Company,
+                Message = contact.Message
+            };
+
+            ViewBag.MailSent = true;
             return View();
         }
 
