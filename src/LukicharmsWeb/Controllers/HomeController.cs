@@ -31,39 +31,51 @@ namespace LukicharmsWeb.Controllers
         [HttpPost]
         public IActionResult Contact(ContactModel contact)
         {
-            try
+            if (ModelState.IsValid)
             {
-                var message = new MimeMessage();
-                message.From.Add(new MailboxAddress(contact.Name, contact.Email));
-                message.To.Add(new MailboxAddress("Lukicharms", "tynamtd@gmail.com"));
-                message.Subject = contact.Name + " from " + contact.Company + " sent you a message";
-
-                message.Body = new TextPart("plain")
+                try
                 {
-                    Text = contact.Message
-                };
+                    var message = new MimeMessage();
+                    message.From.Add(new MailboxAddress(contact.Name, contact.Email));
+                    message.To.Add(new MailboxAddress("Lukicharms", "tynamtd@gmail.com"));
+                    message.Subject = contact.Name + " from " + contact.Company + " sent you a message";
 
-                using (var client = new SmtpClient())
-                {
-                    client.Connect("smtp.gmail.com", 587, false); //587
+                    message.Body = new TextPart("plain")
+                    {
+                        Text = contact.Message
+                    };
 
-                    // Note: since we don't have an OAuth2 token, disable
-                    // the XOAUTH2 authentication mechanism.
-                    client.AuthenticationMechanisms.Remove("XOAUTH2");
+                    using (var client = new SmtpClient())
+                    {
+                        client.Connect("smtp.gmail.com", 587, false); //587
 
-                    // Note: only needed if the SMTP server requires authentication
-                    client.Authenticate("username@email.com", "password");
+                        // Note: since we don't have an OAuth2 token, disable
+                        // the XOAUTH2 authentication mechanism.
+                        client.AuthenticationMechanisms.Remove("XOAUTH2");
 
-                    client.Send(message);
-                    client.Disconnect(true);
+                        // Note: only needed if the SMTP server requires authentication
+                        client.Authenticate("username@email.com", "password");
+
+                        client.Send(message);
+                        client.Disconnect(true);
+                    }
+
+                    ViewBag.Message = "Message Sent";
+                    ViewBag.MessageClass = "alert alert-dismissible alert-success";
+
+                    return View(new ContactModel());
                 }
-
-                ViewBag.Message = "Mail Sent!";
-                return View(new ContactModel());
+                catch (Exception ex)
+                {
+                    ViewBag.Message = "Sorry! Something went wrong and we couldn't send your message. Please try again later. ";
+                    ViewBag.MessageClass = "alert alert-dismissible alert-danger";
+                    return View(contact);
+                }
             }
-            catch (Exception ex)
+            else
             {
-                ViewBag.Message = "Sorry! Something went wrong and we couldn't send your message. Please try again later. ";
+                ViewBag.Message = "All fields are required";
+                ViewBag.MessageClass = "alert alert-dismissible alert-danger";
                 return View(contact);
             }
         }
