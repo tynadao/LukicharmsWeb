@@ -1,9 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using LukicharmsWeb.Models;
+using MailKit.Net.Smtp;
+using MailKit;
+using MimeKit;
+using System;
+using MailKit.Security;
 
 namespace LukicharmsWeb.Controllers
 {
@@ -23,22 +24,48 @@ namespace LukicharmsWeb.Controllers
 
         public IActionResult Contact()
         {
-            return View();
+            var model = new ContactModel();
+            return View(model);
         }
 
         [HttpPost]
         public IActionResult Contact(ContactModel contact)
         {
-            var contactInfo = new ContactModel
+            try
             {
-                Name = contact.Name,
-                Email = contact.Email,
-                Company = contact.Company,
-                Message = contact.Message
-            };
+                var message = new MimeMessage();
+                message.From.Add(new MailboxAddress(contact.Name, contact.Email));
+                message.To.Add(new MailboxAddress("Lukicharms", "tynamtd@gmail.com"));
+                message.Subject = contact.Name + " from " + contact.Company + " sent you a message";
 
-            ViewBag.MailSent = true;
-            return View();
+                message.Body = new TextPart("plain")
+                {
+                    Text = contact.Message
+                };
+
+                using (var client = new SmtpClient())
+                {
+                    client.Connect("smtp.gmail.com", 587, false); //587
+
+                    // Note: since we don't have an OAuth2 token, disable
+                    // the XOAUTH2 authentication mechanism.
+                    client.AuthenticationMechanisms.Remove("XOAUTH2");
+
+                    // Note: only needed if the SMTP server requires authentication
+                    client.Authenticate("username@email.com", "password");
+
+                    client.Send(message);
+                    client.Disconnect(true);
+                }
+
+                ViewBag.Message = "Mail Sent!";
+                return View(new ContactModel());
+            }
+            catch (Exception ex)
+            {
+                ViewBag.Message = "Sorry! Something went wrong and we couldn't send your message. Please try again later. ";
+                return View(contact);
+            }
         }
 
         public IActionResult Error()
